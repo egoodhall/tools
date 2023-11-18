@@ -8,11 +8,11 @@ import (
 	"github.com/kardianos/service"
 )
 
-func New(daemon Daemon) (service.Service, error) {
+func New(name, description string, daemon Daemon) (service.Service, error) {
 	return service.New(daemon, &service.Config{
-		Name:        "sshkeyd",
-		DisplayName: "sshkeyd",
-		Description: "SSH Authorized Key Sync Daemon",
+		Name:        name,
+		DisplayName: name,
+		Description: description,
 		Option:      options(),
 	})
 }

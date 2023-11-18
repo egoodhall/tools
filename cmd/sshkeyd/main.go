@@ -4,7 +4,7 @@ import (
 	"log/slog"
 
 	"github.com/alecthomas/kong"
-	"github.com/egoodhall/tools/cmd/sshkeyd/cli"
+	"github.com/egoodhall/tools/cmd/sshkeyd/internal/cli"
 	"github.com/egoodhall/tools/pkg/logging"
 )
 
@@ -16,7 +16,8 @@ func main() {
 type Cli struct {
 	Level slog.Level `name:"level" short:"l" required:"" default:"info"`
 
-	Sync cli.SyncCmd `name:"sync" cmd:""`
+	Sync    cli.SyncCmd    `name:"sync" cmd:""`
+	Service cli.ServiceCmd `name:"service" cmd:""`
 }
 
 func (cli *Cli) AfterApply() error {

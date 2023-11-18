@@ -11,21 +11,18 @@ import (
 )
 
 type Config struct {
-	GithubUsers        []string `name:"github"`
-	GitlabUsers        []string `name:"gitlab"`
-	Urls               []string `name:"url"`
+	RemoteKeyUrls      []string `name:"url"`
 	AuthorizedKeysFile string   `name:"keys-file" short:"f" required:"" default:"$HOME/.ssh/authorized_keys"`
 	Prune              bool     `name:"prune" default:"true"`
-	Save               bool     `name:"save" default:"false"`
 }
 
-func Run(cfg Config) error {
+func Run(cfg Config) (string, error) {
 	seenKeys := make(map[ssh.AuthorizedKey]struct{})
 	allKeys := make([]ssh.AuthorizedKey, 0)
 
 	localKeys, err := cfg.loadLocalKeys()
 	if err != nil {
-		return fmt.Errorf("load local keys: %w", err)
+		return "", fmt.Errorf("load local keys: %w", err)
 	}
 
 	for _, key := range localKeys {
@@ -37,7 +34,7 @@ func Run(cfg Config) error {
 
 	remoteKeys, err := cfg.loadRemoteKeys()
 	if err != nil {
-		return fmt.Errorf("load remote keys: %w", err)
+		return "", fmt.Errorf("load remote keys: %w", err)
 	}
 
 	for _, key := range remoteKeys {
@@ -52,20 +49,14 @@ func Run(cfg Config) error {
 		bld.WriteString(key.String())
 		bld.WriteRune('\n')
 	}
-
-	if cfg.Save {
-		return os.WriteFile(cfg.AuthorizedKeysFile, []byte(bld.String()), 0600)
-	}
-
-	fmt.Println(bld.String())
-	return nil
+	return bld.String(), nil
 }
 
-func (flags *Config) loadLocalKeys() ([]ssh.AuthorizedKey, error) {
+func (cfg *Config) loadLocalKeys() ([]ssh.AuthorizedKey, error) {
 	seenKeys := make(map[ssh.AuthorizedKey]struct{})
 	allKeys := make([]ssh.AuthorizedKey, 0)
 
-	data, err := os.ReadFile(flags.AuthorizedKeysFile)
+	data, err := os.ReadFile(cfg.AuthorizedKeysFile)
 	if os.IsNotExist(err) {
 		return nil, nil
 	} else if err != nil {
@@ -84,12 +75,12 @@ func (flags *Config) loadLocalKeys() ([]ssh.AuthorizedKey, error) {
 	return allKeys, nil
 }
 
-func (cmd *Config) loadRemoteKeys() ([]ssh.AuthorizedKey, error) {
+func (cfg *Config) loadRemoteKeys() ([]ssh.AuthorizedKey, error) {
 	seenKeys := make(map[ssh.AuthorizedKey]struct{})
 	allKeys := make([]ssh.AuthorizedKey, 0)
 
-	for _, url := range cmd.getUrls() {
-		keys, err := cmd.getKeys(url)
+	for _, url := range cfg.RemoteKeyUrls {
+		keys, err := cfg.getRemoteKeys(url)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", url, err)
 		}
@@ -106,7 +97,7 @@ func (cmd *Config) loadRemoteKeys() ([]ssh.AuthorizedKey, error) {
 	return allKeys, nil
 }
 
-func (cmd *Config) getKeys(url string) ([]ssh.AuthorizedKey, error) {
+func (cfg *Config) getRemoteKeys(url string) ([]ssh.AuthorizedKey, error) {
 	response, err := http.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("fetch keys: %w", err)
@@ -132,19 +123,4 @@ func (cmd *Config) getKeys(url string) ([]ssh.AuthorizedKey, error) {
 	}
 
 	return keys, nil
-}
-
-func (cmd *Config) getUrls() []string {
-	urls := make([]string, len(cmd.Urls))
-	copy(urls, cmd.Urls)
-
-	for _, user := range cmd.GithubUsers {
-		urls = append(urls, fmt.Sprintf("https://github.com/%s.keys", user))
-	}
-
-	for _, user := range cmd.GitlabUsers {
-		urls = append(urls, fmt.Sprintf("https://gitlab.com/%s.keys", user))
-	}
-
-	return urls
 }
