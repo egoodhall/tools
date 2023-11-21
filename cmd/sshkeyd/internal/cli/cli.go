@@ -3,22 +3,21 @@ package cli
 import (
 	"os"
 	"strings"
-	"time"
+)
+
+const (
+	serviceName        = "com.github.egoodhall.tools.sshkeyd"
+	serviceDescription = "Sync authorized SSH keys file from URLs"
 )
 
 type CommonFlags struct {
-	GithubUsers        []string      `name:"github"`
-	GitlabUsers        []string      `name:"gitlab"`
-	Urls               []string      `name:"url"`
-	AuthorizedKeysFile string        `name:"keys-file" short:"f" required:"" default:"$HOME/.ssh/authorized_keys"`
-	RefreshInterval    time.Duration `name:"interval" default:"0m" hidden:""`
+	GithubUsers        []string `name:"github"`
+	GitlabUsers        []string `name:"gitlab"`
+	Urls               []string `name:"url"`
+	AuthorizedKeysFile string   `name:"keys-file" short:"f" required:"" default:"$HOME/.ssh/authorized_keys"`
 }
 
-func (flags CommonFlags) Args() []string {
-	args := []string{
-		"--keys-file=" + os.ExpandEnv(flags.AuthorizedKeysFile),
-		"--interval=" + flags.RefreshInterval.String(),
-	}
+func (flags CommonFlags) Args(args ...string) []string {
 	if len(flags.GithubUsers) > 0 {
 		args = append(args, "--github="+strings.Join(flags.GithubUsers, ","))
 	}
@@ -28,5 +27,8 @@ func (flags CommonFlags) Args() []string {
 	if len(flags.Urls) > 0 {
 		args = append(args, "--url="+strings.Join(flags.Urls, ","))
 	}
-	return args
+	return append(args,
+		"--keys-file="+os.ExpandEnv(flags.AuthorizedKeysFile),
+		"--interval="+flags.RefreshInterval.String(),
+	)
 }

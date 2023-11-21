@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/egoodhall/tools/cmd/sshkeyd/internal/sync"
 	"github.com/egoodhall/tools/pkg/daemon"
@@ -10,16 +11,17 @@ import (
 )
 
 type SyncCmd struct {
-	Flags CommonFlags `embed:""`
-	Write bool        `name:"write" short:"w" default:"true" negatable:""`
+	Flags           CommonFlags   `embed:""`
+	RefreshInterval time.Duration `name:"interval" default:"0m" hidden:""`
+	Write           bool          `name:"write" short:"w" default:"true" negatable:""`
 }
 
 func (cmd *SyncCmd) Run() error {
-	if cmd.Flags.RefreshInterval == 0 {
+	if cmd.RefreshInterval == 0 {
 		return cmd.run(nil)
 	}
 
-	dmn, err := daemon.New("sshkeyd", daemon.Periodic(cmd.Flags.RefreshInterval, cmd.run))
+	dmn, err := daemon.New(serviceName, daemon.Periodic(cmd.RefreshInterval, cmd.run))
 	if err != nil {
 		return err
 	}

@@ -2,7 +2,6 @@ package cli
 
 import (
 	"os"
-	"time"
 
 	"github.com/egoodhall/tools/pkg/daemon"
 	"github.com/kardianos/service"
@@ -14,14 +13,9 @@ type ServiceCmd struct {
 }
 
 func (cmd *ServiceCmd) Run() error {
-	interval := cmd.Flags.RefreshInterval
-	if interval == 0 {
-		interval = 5 * time.Minute
-	}
-
 	dmn, err := daemon.NewController(
-		"sshkeyd", "Sync authorized SSH keys file from URLs",
-		os.Args[0], cmd.Flags.Args()...,
+		serviceName, serviceDescription,
+		os.Args[0], cmd.Flags.Args("sync", "--interval=5m")...,
 	)
 	if err != nil {
 		return err
