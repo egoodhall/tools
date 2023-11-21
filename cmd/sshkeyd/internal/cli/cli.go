@@ -29,6 +29,5 @@ func (flags CommonFlags) Args(args ...string) []string {
 	}
 	return append(args,
 		"--keys-file="+os.ExpandEnv(flags.AuthorizedKeysFile),
-		"--interval="+flags.RefreshInterval.String(),
 	)
 }
