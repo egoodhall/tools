@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"os"
 	"time"
 
 	"github.com/egoodhall/tools/pkg/daemon"
@@ -17,7 +18,11 @@ func (cmd *ServiceCmd) Run() error {
 	if interval == 0 {
 		interval = 5 * time.Minute
 	}
-	dmn, err := daemon.New("sshkeyd", "Sync authorized SSH keys file from URLs", nil)
+
+	dmn, err := daemon.NewController(
+		"sshkeyd", "Sync authorized SSH keys file from URLs",
+		os.Args[0], cmd.Flags.Args()...,
+	)
 	if err != nil {
 		return err
 	}

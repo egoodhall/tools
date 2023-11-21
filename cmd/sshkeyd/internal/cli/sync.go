@@ -19,7 +19,7 @@ func (cmd *SyncCmd) Run() error {
 		return cmd.run(nil)
 	}
 
-	dmn, err := daemon.New("sshkeyd", "", daemon.Periodic(cmd.Flags.RefreshInterval, cmd.run))
+	dmn, err := daemon.New("sshkeyd", daemon.Periodic(cmd.Flags.RefreshInterval, cmd.run))
 	if err != nil {
 		return err
 	}

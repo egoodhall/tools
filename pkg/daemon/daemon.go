@@ -8,11 +8,21 @@ import (
 	"github.com/kardianos/service"
 )
 
-func New(name, description string, daemon Daemon) (service.Service, error) {
-	return service.New(daemon, &service.Config{
+func NewController(name, description, command string, arguments ...string) (service.Service, error) {
+	return service.New(nil, &service.Config{
 		Name:        name,
 		DisplayName: name,
 		Description: description,
+		Executable:  command,
+		Arguments:   arguments,
+		Option:      options(),
+	})
+}
+
+func New(name string, daemon Daemon) (service.Service, error) {
+	return service.New(daemon, &service.Config{
+		Name:        name,
+		DisplayName: name,
 		Option:      options(),
 	})
 }
