@@ -13,6 +13,7 @@ func NewController(name, description, command string, arguments ...string) (serv
 		Name:        name,
 		DisplayName: name,
 		Description: description,
+		Executable:  command,
 		Arguments:   arguments,
 		Option:      options(),
 	})
