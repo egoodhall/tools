@@ -31,10 +31,10 @@ func (cmd *ApplyCmd) Run() error {
 
 	slog.Debug("Compare applied & expected env variables", "applied", currentVars, "file", vars)
 	if envars.IsSame(currentVars, vars) {
-		slog.Info("Applied and expected environments match. No changes needed")
+		slog.Debug("Applied and expected environments match. No changes needed")
 		return nil
 	}
-	slog.Info("Expected environment changed. Updating.")
+	slog.Debug("Expected environment changed. Updating.")
 
 	if current, ok := os.LookupEnv("EMV_MANAGED_VARS"); ok {
 		names := strings.Split(current, ":")
