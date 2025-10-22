@@ -3,6 +3,7 @@ package sync
 import (
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
@@ -11,31 +12,34 @@ import (
 )
 
 type Config struct {
-	RemoteKeyUrls      []string `name:"url"`
-	AuthorizedKeysFile string   `name:"keys-file" short:"f" required:"" default:"$HOME/.ssh/authorized_keys"`
-	Prune              bool     `name:"prune" default:"true"`
+	RemoteKeyUrls      []string
+	AuthorizedKeysFile string
+	Prune              bool
 }
 
-func Run(cfg Config) (string, error) {
+func (cfg Config) ResolveAuthorizedKeys() ([]ssh.AuthorizedKey, error) {
 	seenKeys := make(map[ssh.AuthorizedKey]struct{})
 	allKeys := make([]ssh.AuthorizedKey, 0)
 
-	localKeys, err := cfg.loadLocalKeys()
-	if err != nil {
-		return "", fmt.Errorf("load local keys: %w", err)
-	}
-
-	for _, key := range localKeys {
-		if _, seen := seenKeys[key.WithoutComment()]; !seen {
-			seenKeys[key.WithoutComment()] = struct{}{}
-			allKeys = append(allKeys, key)
+	if !cfg.Prune {
+		localKeys, err := cfg.loadLocalKeys()
+		if err != nil {
+			return nil, fmt.Errorf("load local keys: %w", err)
 		}
+		for _, key := range localKeys {
+			if _, seen := seenKeys[key.WithoutComment()]; !seen {
+				seenKeys[key.WithoutComment()] = struct{}{}
+				allKeys = append(allKeys, key)
+			}
+		}
+		slog.Info("loaded local keys", "count", len(localKeys))
 	}
 
 	remoteKeys, err := cfg.loadRemoteKeys()
 	if err != nil {
-		return "", fmt.Errorf("load remote keys: %w", err)
+		return nil, fmt.Errorf("load remote keys: %w", err)
 	}
+	slog.Info("loaded remote keys", "count", len(remoteKeys))
 
 	for _, key := range remoteKeys {
 		if _, seen := seenKeys[key.WithoutComment()]; !seen {
@@ -44,12 +48,7 @@ func Run(cfg Config) (string, error) {
 		}
 	}
 
-	bld := new(strings.Builder)
-	for _, key := range allKeys {
-		bld.WriteString(key.String())
-		bld.WriteRune('\n')
-	}
-	return bld.String(), nil
+	return allKeys, nil
 }
 
 func (cfg *Config) loadLocalKeys() ([]ssh.AuthorizedKey, error) {
